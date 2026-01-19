@@ -120,23 +120,27 @@ struct Platnosc {
 };
 
 // ====== Obserwatorzy rezerwacji ======
+// Interfejs obserwatora rezerwacji - do implementacji powiadomien o zmianie statusu
 struct RezerwacjaObserwacja {
     virtual ~RezerwacjaObserwacja() {}
     virtual void update(BookingStatus s) = 0;
 };
 
+// Obserwator klienta - wyswietla zmiany statusu dla klienta
 struct KlientObserwator : public RezerwacjaObserwacja {
     void update(BookingStatus s) override {
         std::cout << "[Klient] Nowy status rezerwacji: " << to_string(s) << "\n";
     }
 };
 
+// Obserwator recepcjonisty - wyswietla zmiany statusu dla recepcjonisty
 struct RecepcjonistaObserwator : public RezerwacjaObserwacja {
     void update(BookingStatus s) override {
         std::cout << "[Recepcjonista] Status rezerwacji: " << to_string(s) << "\n";
     }
 };
 
+// System powiadomien - zapisywanie lub logowanie zmian statusu
 struct SystemPowiadomien : public RezerwacjaObserwacja {
     void update(BookingStatus s) override {
         std::cout << "[SystemPowiadomien] Zapisano status: " << to_string(s) << "\n";
@@ -144,6 +148,7 @@ struct SystemPowiadomien : public RezerwacjaObserwacja {
 };
 
 // ====== RezerwacjaDane (obiekt z obserwatorami) ======
+// Przechowuje dane rezerwacji i powiadamia obserwatorow o zmianach statusu
 struct RezerwacjaDane {
     std::string idRezerwacji;
     int pokojId;
@@ -163,13 +168,13 @@ struct RezerwacjaDane {
             }
         }
     }
-
+    // Powiadom wszystkich obserwatorow o zmianie statusu
     void powiadom() {
         for (size_t i = 0; i < obserwatorzy.size(); i++) {
             obserwatorzy[i]->update(status);
         }
     }
-
+    // Ustaw status i powiadom obserwatorow
     void ustawStatus(BookingStatus s) {
         status = s;
         powiadom();
@@ -177,6 +182,7 @@ struct RezerwacjaDane {
 };
 
 // ====== RezerwacjaBuilder ======
+// Budowniczy obiektu RezerwacjaDane, umozliwia ustawianie danych krok po kroku
 class RezerwacjaBuilder {
     RezerwacjaDane dane;
 public:
@@ -202,6 +208,7 @@ public:
 };
 
 // ====== RoomService ======
+// Zarzadzanie pokojami - dodawanie, usuwanie (dezaktywacja), edycja, lista i status
 class RoomService {
     std::vector<Pokoj> pokoje;
     int nextId = 1;
@@ -218,7 +225,7 @@ public:
         pokoje.push_back(p);
         return p.id;
     }
-
+    // Dezaktywuje pokoj zamiast usuwac z listy
     bool usunPokoj(int id) {
         for (size_t i = 0; i < pokoje.size(); i++) {
             if (pokoje[i].id == id && pokoje[i].aktywny) {
@@ -229,7 +236,7 @@ public:
         }
         return false;
     }
-
+    // Edytuj opis i cene pokoju, jesli pokoj aktywny
     bool edytujPokoj(int id, const std::string& nowyOpis, double nowaCena) {
         for (size_t i = 0; i < pokoje.size(); i++) {
             if (pokoje[i].id == id && pokoje[i].aktywny) {
@@ -244,7 +251,7 @@ public:
     const std::vector<Pokoj>& lista() const {
         return pokoje;
     }
-
+    // Znajdz pokoj do edycji/statusu
     Pokoj* znajdzMutable(int id) {
         for (size_t i = 0; i < pokoje.size(); i++) {
             if (pokoje[i].id == id) return &pokoje[i];
@@ -258,14 +265,14 @@ public:
         }
         return nullptr;
     }
-
+    // Ustaw status pokoju jesli istnieje
     bool ustawStatus(int id, RoomStatus s) {
         Pokoj* p = znajdzMutable(id);
         if (!p) return false;
         p->status = s;
         return true;
     }
-
+    // Sprawdz czy pokoj jest wolny i aktywny
     bool jestWolny(int id, int /*od*/, int /*doDnia*/) const {
         const Pokoj* p = znajdz(id);
         if (!p) return false;
@@ -275,6 +282,7 @@ public:
 };
 
 // ====== PaymentService ======
+// Zarzadzanie platnosciami: tworzenie, anulowanie, oznaczanie jako oplacone, lista, wyszukiwanie
 class PaymentService {
     std::vector<Platnosc> platnosci;
     int nextId = 1;
@@ -323,6 +331,7 @@ public:
 };
 
 // ====== ReservationService ======
+// Zarzadzanie rezerwacjami: tworzenie, potwierdzanie, anulowanie, meldowanie, wymeldowywanie, dostepnosc, lista
 class ReservationService {
     std::vector<Rezerwacja> rezerwacje;
     int nextId = 1;
@@ -349,7 +358,7 @@ public:
         }
         return false;
     }
-
+    // Potwierdz rezerwacje (zmien status jesli utworzona lub oczekujaca)
     bool potwierdz(int id) {
         for (size_t i = 0; i < rezerwacje.size(); i++) {
             if (rezerwacje[i].id == id &&
@@ -361,7 +370,7 @@ public:
         }
         return false;
     }
-
+    // Anuluj rezerwacje jesli nie jest juz anulowana lub wykonana
     bool anuluj(int id) {
         for (size_t i = 0; i < rezerwacje.size(); i++) {
             if (rezerwacje[i].id == id &&
@@ -373,7 +382,7 @@ public:
         }
         return false;
     }
-
+    // Zameldowanie zmienia status rezerwacji i status pokoju na zajety
     bool zamelduj(int id, RoomService& roomService) {
         for (size_t i = 0; i < rezerwacje.size(); i++) {
             if (rezerwacje[i].id == id &&
@@ -385,7 +394,7 @@ public:
         }
         return false;
     }
-
+    // Wymeldowanie zwalnia pokoj i zmienia status rezerwacji na wykonana, a pokoju na wolny
     bool wymelduj(int id, RoomService& roomService) {
         for (size_t i = 0; i < rezerwacje.size(); i++) {
             if (rezerwacje[i].id == id &&
@@ -398,7 +407,7 @@ public:
         }
         return false;
     }
-
+    // Sprawdz czy pokoj jest wolny w podanym okresie (bez konfliktu z innymi rezerwacjami)
     bool sprawdzDostepnosc(int pokojId, int odDnia, int doDnia, const RoomService& roomService) const {
         if (!roomService.jestWolny(pokojId, odDnia, doDnia)) return false;
         for (size_t i = 0; i < rezerwacje.size(); i++) {
@@ -420,6 +429,7 @@ public:
 };
 
 // ====== UI helpers ======
+// Bezpieczne wczytywanie int (walidacja std::cin)
 int wczytajInt(const std::string& prompt) {
     std::cout << prompt;
     int x;
@@ -430,7 +440,7 @@ int wczytajInt(const std::string& prompt) {
     }
     return x;
 }
-
+//double (walidacja std::cin)
 double wczytajDouble(const std::string& prompt) {
     std::cout << prompt;
     double x;
@@ -441,7 +451,7 @@ double wczytajDouble(const std::string& prompt) {
     }
     return x;
 }
-
+// Wczytywanie calego wiersza tekstu
 std::string wczytajStringLine(const std::string& prompt) {
     std::cout << prompt;
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -451,6 +461,7 @@ std::string wczytajStringLine(const std::string& prompt) {
 }
 
 // ====== Menu: Pokoje ======
+// Menu do zarzadzania pokojami: dodaj, usun, lista, edytuj
 void menuPokoje(RoomService& roomService) {
     while (true) {
         std::cout << "\n== POKOJE ==\n"
@@ -461,8 +472,9 @@ void menuPokoje(RoomService& roomService) {
             << "0) Wroc\n";
         int op = wczytajInt("> ");
         if (op == 0) return;
-
+        
         if (op == 1) {
+            // Dodawanie nowego pokoju
             int numer = wczytajInt("Numer pokoju: ");
             int poj = wczytajInt("Pojemnosc: ");
             double cena = wczytajDouble("Cena za dobe: ");
@@ -471,10 +483,12 @@ void menuPokoje(RoomService& roomService) {
             std::cout << "Dodano pokoj, id=" << id << "\n";
         }
         else if (op == 2) {
+            // Dezaktywacja pokoju
             int id = wczytajInt("ID pokoju: ");
             std::cout << (roomService.usunPokoj(id) ? "OK\n" : "Nie znaleziono/nieaktywny\n");
         }
         else if (op == 3) {
+            // Lista pokoi
             const std::vector<Pokoj>& lista = roomService.lista();
             for (size_t i = 0; i < lista.size(); i++) {
                 const Pokoj& p = lista[i];
@@ -489,6 +503,7 @@ void menuPokoje(RoomService& roomService) {
             }
         }
         else if (op == 4) {
+            // Edycja opisu i ceny pokoju
             int id = wczytajInt("ID pokoju: ");
             std::string opis = wczytajStringLine("Nowy opis: ");
             double cena = wczytajDouble("Nowa cena: ");
@@ -514,6 +529,7 @@ void menuRezerwacje(ReservationService& resService, RoomService& roomService, Pa
         if (op == 0) return;
 
         if (op == 1) {
+            // Tworzenie nowej rezerwacji - sprawdza dostepnosc na okres
             int klientId = wczytajInt("Klient ID (dowolna liczba): ");
             int pokojId = wczytajInt("Pokoj ID: ");
             int od = wczytajInt("Od dnia (int): ");
@@ -527,14 +543,17 @@ void menuRezerwacje(ReservationService& resService, RoomService& roomService, Pa
             }
         }
         else if (op == 2) {
+            // Potwierdzenie rezerwacji zmienia status rezerwacji na potwierdzona
             int id = wczytajInt("ID rezerwacji: ");
             std::cout << (resService.potwierdz(id) ? "OK\n" : "Nie mozna potwierdzic\n");
         }
         else if (op == 3) {
+            // Zmienia status na anulowana
             int id = wczytajInt("ID rezerwacji: ");
             std::cout << (resService.anuluj(id) ? "OK\n" : "Nie mozna anulowac\n");
         }
         else if (op == 4) {
+            // Wyswietla liste wszystkich rezerwacji z podstawowymi danymi
             const std::vector<Rezerwacja>& lista = resService.lista();
             for (size_t i = 0; i < lista.size(); i++) {
                 const Rezerwacja& r = lista[i];
@@ -548,14 +567,17 @@ void menuRezerwacje(ReservationService& resService, RoomService& roomService, Pa
             }
         }
         else if (op == 5) {
+            // Zameldowanie klienta do pokoju, zmiana statusu rezerwacji i statusu pokoju
             int id = wczytajInt("ID rezerwacji: ");
             std::cout << (resService.zamelduj(id, roomService) ? "Zameldowano\n" : "Nie mozna zameldowac\n");
         }
         else if (op == 6) {
+            // Wymeldowanie...
             int id = wczytajInt("ID rezerwacji: ");
             std::cout << (resService.wymelduj(id, roomService) ? "Wymeldowano\n" : "Nie mozna wymeldowac\n");
         }
         else if (op == 7) {
+            // Sprawdzenie dostepnosci pokoju na wybrany okres
             int pokojId = wczytajInt("Pokoj ID: ");
             int od = wczytajInt("Od dnia (int): ");
             int doD = wczytajInt("Do dnia (int): ");
@@ -563,6 +585,7 @@ void menuRezerwacje(ReservationService& resService, RoomService& roomService, Pa
             std::cout << (ok ? "Dostepny\n" : "Niedostepny\n");
         }
         else if (op == 8) {
+            // Tworzenie platnosci powiazanej z rezerwacja
             int rezId = wczytajInt("ID rezerwacji: ");
             int kwota = wczytajInt("Kwota (int): ");
             std::cout << "Metoda platnosci: 1) gotowka 2) karta 3) przelew\n";
@@ -589,6 +612,7 @@ void menuPlatnosci(PaymentService& payService) {
         if (op == 0) return;
 
         if (op == 1) {
+            // Wyswietlenie listy wszystkich platnosci wraz z ich statusami
             const std::vector<Platnosc>& lista = payService.lista();
             for (size_t i = 0; i < lista.size(); i++) {
                 const Platnosc& p = lista[i];
@@ -601,10 +625,12 @@ void menuPlatnosci(PaymentService& payService) {
             }
         }
         else if (op == 2) {
+            // Zmiana statusu platnosci na oplacone
             int id = wczytajInt("ID platnosci: ");
             std::cout << (payService.oznaczOplacone(id) ? "OK\n" : "Nie mozna oznaczyc\n");
         }
         else if (op == 3) {
+            // Zmiana na anulowane
             int id = wczytajInt("ID platnosci: ");
             std::cout << (payService.anulujPlatnosc(id) ? "OK\n" : "Nie mozna anulowac\n");
         }
@@ -643,6 +669,7 @@ void menuAdmin(RoomService& roomService, ReservationService& resService) {
 
         if (op == 1) menuPokoje(roomService);
         else if (op == 2) {
+            // Raport z aktualnym stanem pokoi i rezerwacji
             std::cout << "\n--- RAPORT ---\n";
             std::cout << "Pokoje:\n";
             for (auto& p : roomService.lista()) {
@@ -725,6 +752,7 @@ void menuKlient(RoomService& roomService,
             }
         }
         else if (op == 2) {
+            // Tworzenie rezerwacji gdy pokoj dostepny
             int klientId = wczytajInt("Twoje ID: ");
             int pokojId = wczytajInt("Pokoj ID: ");
             int od = wczytajInt("Od dnia: ");
@@ -747,10 +775,12 @@ void menuKlient(RoomService& roomService,
             std::cout << "Metoda: 1) gotowka 2) karta 3) przelew\n";
             int m = wczytajInt("> ");
 
+            // Metoda platnosci
             PaymentMethodType metoda = PaymentMethodType::Gotowka;
             if (m == 2) metoda = PaymentMethodType::Karta;
             else if (m == 3) metoda = PaymentMethodType::Przelew;
 
+            // Powiazanie platnosci i oznaczenie jako oplaconej
             int pid = payService.utworzPlatnosc(rezId, kwota, metoda);
             resService.powiazPlatnosc(rezId, pid);
             payService.oznaczOplacone(pid);
