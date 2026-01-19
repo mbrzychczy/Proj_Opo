@@ -1,0 +1,55 @@
+Instrukcja obsługi systemu rezerwacji hotelowych
+
+1. Uruchomienie programu:
+ - Program jest aplikacją konsolową, uruchamianą w terminalu po skompilowaniu.
+
+2. Logowanie:
+ - Po uruchomieniu program prosi o wybór roli:
+   1) Administrator
+   2) Recepcjonista
+   3) Klient
+   0) Wyjście
+
+3. Role i dostępne funkcje:
+
+  Administrator:
+  - Dodawanie nowych pokoi do bazy
+  - Edycja opisu i ceny pokoi
+  - Dezaktywacja pokoi (usunięcie z użytku)
+  - Generowanie raportów o pokojach i rezerwacjach
+
+  Recepcjonista:
+  - Przeglądanie listy pokoi i rezerwacji
+  - Potwierdzanie rezerwacji klientów
+  - Anulowanie rezerwacji
+  - Meldowanie klientów do pokoi
+  - Wymeldowywanie klientów
+  - Zarządzanie płatnościami (oznaczanie jako opłacone lub anulowanie)
+
+  Klient:
+  - Przeglądanie dostępnych pokoi
+  - Tworzenie rezerwacji podając swój identyfikator, pokój i termin pobytu
+  - Anulowanie wcześniej utworzonych rezerwacji
+  - Dokonywanie płatności za rezerwacje wybraną metodą płatności
+
+4. Zarządzanie pokojami (administrator):
+ - Wybierz opcję dodaj pokój i podaj numer, pojemność, cenę i opis
+ - Opcja usuń dezaktywuje pokój, który nie będzie więcej dostępny
+ - Edycja pozwala zmienić opis i cenę za dobę dla istniejącego pokoju
+
+5. Rezerwacje:
+ - Sprawdź dostępność pokoju zanim utworzysz rezerwację
+ - Rezerwacje można potwierdzić lub anulować
+ - Meldowanie i wymeldowywanie jest dostępne dla recepcjonisty
+
+6. Płatności:
+ - Płatności tworzy się dla rezerwacji, można wybrać metodę płatności
+ - Płatności można oznaczyć jako opłacone lub anulowane
+
+7. Wyjście:
+ - Aby zakończyć działanie programu wybierz w menu logowania opcję 0
+
+8. Uwagi:
+ - Program przechowuje dane tylko w pamięci podczas działania
+ - Po zamknięciu dane zostaną utracone
+ - Wprowadzaj poprawne wartości liczbowe tam, gdzie jest to wymagane
